@@ -1,0 +1,110 @@
+#define REMOTEXY_MODE__ESP8266WIFI_LIB_CLOUD
+#include <ESP8266WiFi.h>
+#include <NTPClient.h>
+#include <RemoteXY.h>
+#include <WiFiUdp.h>
+
+// RemoteXY connection settings 
+#define REMOTEXY_WIFI_SSID "iPhone (Слава)"
+#define REMOTEXY_WIFI_PASSWORD "88888888"
+#define REMOTEXY_CLOUD_SERVER "cloud.remotexy.com"
+#define REMOTEXY_CLOUD_PORT 6376
+#define REMOTEXY_CLOUD_TOKEN "a39668cda05fda160c49aefdfa3c9b64"
+
+
+#include <RemoteXY.h>
+
+// RemoteXY configurate  
+#pragma pack(push, 1)
+uint8_t RemoteXY_CONF[] =   // 297 bytes
+  { 255,12,0,6,0,34,1,17,0,0,0,31,1,106,200,1,1,16,0,10,
+  84,47,17,17,48,4,1,31,79,78,0,31,79,70,70,0,7,14,47,24,
+  17,21,2,26,7,88,2,16,7,20,2,26,67,33,2,18,11,2,24,16,
+  3,129,27,38,53,6,24,208,146,209,128,208,181,208,188,209,143,32,208,177,
+  209,131,208,180,208,184,208,187,209,140,208,189,208,184,208,186,208,176,0,7,
+  4,71,23,10,20,2,26,7,4,90,23,10,20,2,26,129,30,74,49,6,
+  24,208,159,208,190,208,178,209,130,208,190,209,128,32,40,208,188,208,184,208,
+  189,209,131,209,130,209,139,41,0,129,29,90,68,6,24,208,148,208,187,208,
+  184,209,130,208,181,208,187,209,140,208,189,208,190,209,129,209,130,209,140,32,
+  209,128,208,176,209,129,209,129,208,178,208,181,209,130,208,176,0,129,51,96,
+  26,6,24,40,208,188,208,184,208,189,209,131,209,130,209,139,41,0,4,5,
+  123,98,12,192,2,26,129,27,113,51,6,24,208,175,209,128,208,186,208,190,
+  209,129,209,130,209,140,32,209,128,208,176,209,129,209,129,208,178,208,181,209,
+  130,208,176,0,129,42,47,5,17,24,58,0,7,49,47,24,17,21,2,26,
+  129,52,1,3,12,24,58,0,67,56,2,22,11,0,24,31,3 };
+  
+// this structure defines all the variables and events of your control interface 
+struct {
+
+    // input variables
+  uint8_t timerbutton; // =1 if state is ON, else =0
+  int16_t timerhour; // -32768 .. +32767
+  int16_t timemap; // -32768 .. +32767
+  int16_t repeattimer; // -32768 .. +32767
+  int16_t longtimer; // -32768 .. +32767
+  int8_t light; // =0..100 slider position
+  int16_t timerminute; // -32768 .. +32767
+
+    // output variables
+  char timehour[3]; // string UTF8 end zero
+  char timeminute[3]; // string UTF8 end zero
+
+    // other variable
+  uint8_t connect_flag;  // =1 if wire connected, else =0
+
+} RemoteXY;
+#pragma pack(pop)
+/////////////////////////////////////////////
+//           END RemoteXY include          //
+/////////////////////////////////////////////
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org");
+
+
+
+void setup() 
+{
+  RemoteXY_Init (); 
+  timeClient.begin();
+   Serial.begin(115200);
+  
+  // TODO you setup code
+  
+}
+
+void loop() 
+{ 
+  RemoteXY_Handler ();
+  
+  
+   timeClient.setTimeOffset(RemoteXY.timemap * 3600);
+  timeClient.update();
+  int currentHour = timeClient.getHours();
+ char Hour[2];
+ //sprintf(Hour, "%d", currentHour);
+ itoa(currentHour, Hour, 10);
+if (currentHour < 10) {
+   Hour[1] = Hour[0];
+ Hour[0] = '0';
+ } 
+  int currentMinute = timeClient.getMinutes();
+  char Minute[2];
+  itoa(currentMinute, Minute, 10);
+ if (currentMinute < 10) {
+   Minute[1] = Minute[0];
+  Minute[0] = '0';
+ } 
+ Serial.println(currentHour);
+ Serial.print("Hour: ");
+ Serial.print(Hour[0]); 
+ Serial.println(Hour[1]);
+ Serial.print("Minutes: ");
+ Serial.print(Minute[0]); 
+ Serial.println(Minute[1]); 
+ RemoteXY.timehour[0] = Hour[0];
+ RemoteXY.timehour[1] = Hour[1];
+ RemoteXY.timeminute[0] = Minute[0];
+ RemoteXY.timeminute[1] = Minute[1];
+delay(2000);
+
+}
